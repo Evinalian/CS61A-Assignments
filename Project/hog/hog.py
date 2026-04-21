@@ -2,7 +2,7 @@
 
 from dice import six_sided, make_test_dice
 from ucb import main, trace, interact
-
+from operator import add, sub, mul
 GOAL = 100  # The goal of Hog is to score 100 points.
 
 ######################
@@ -22,9 +22,24 @@ def roll_dice(num_rolls, dice=six_sided):
     assert num_rolls > 0, 'Must roll at least once.'
     # BEGIN PROBLEM 1
     "*** YOUR CODE HERE ***"
+    if num_rolls <= 0:
+        print('num_rolls must be an integer.')
+    #score记录分数
+    score = 0
+    #tag记录是否出现过1，要求不管有没有1都要投掷完骰子
+    tag = False
+    #for循环记录分数
+    for _ in range(num_rolls):
+        score_now = dice() #记录本轮分数
+        score += score_now
+        #判断是否为1
+        if score_now == 1:
+            tag = True
+    if tag:
+        return 1
+    return score
     # END PROBLEM 1
-
-
+ 
 def boar_brawl(player_score, opponent_score):
     """Return the points scored by rolling 0 dice according to Boar Brawl.
 
@@ -34,9 +49,16 @@ def boar_brawl(player_score, opponent_score):
     """
     # BEGIN PROBLEM 2
     "*** YOUR CODE HERE ***"
+    #分别求出对手分数十位数和当前玩家分数个位
+    tens_score = (opponent_score // 10) % 10
+    unit_score = player_score % 10
+    #计算本轮得分
+    score = mul(3, abs(tens_score - unit_score))
+    if score < 1:
+        return 1
+    return score
     # END PROBLEM 2
-
-
+  
 def take_turn(num_rolls, player_score, opponent_score, dice=six_sided):
     """Return the points scored on a turn rolling NUM_ROLLS dice when the
     player has PLAYER_SCORE points and the opponent has OPPONENT_SCORE points.
@@ -52,8 +74,12 @@ def take_turn(num_rolls, player_score, opponent_score, dice=six_sided):
     assert num_rolls <= 10, 'Cannot roll more than 10 dice.'
     # BEGIN PROBLEM 3
     "*** YOUR CODE HERE ***"
+    if num_rolls == 0:
+        return boar_brawl(player_score, opponent_score)
+    else:
+        return roll_dice(num_rolls)
     # END PROBLEM 3
-
+  
 
 def simple_update(num_rolls, player_score, opponent_score, dice=six_sided):
     """Return the total score of a player who starts their turn with
@@ -77,12 +103,25 @@ def num_factors(n):
     """Return the number of factors of N, including 1 and N itself."""
     # BEGIN PROBLEM 4
     "*** YOUR CODE HERE ***"
+    count = 1 #默认算n
+    for i in range(1, n):
+        if n % i == 0:
+            count += 1
+    return count
     # END PROBLEM 4
 
 def sus_points(score):
     """Return the new score of a player taking into account the Sus Fuss rule."""
     # BEGIN PROBLEM 4
     "*** YOUR CODE HERE ***"
+    if num_factors(score) != 3 or num_factors(score) != 4:
+        #循环寻找最近质数
+        sus_score = score
+        while num_factors(sus_score) > 2:#is_prime函数同样可以
+            sus_score += 1
+        return sus_score
+    else:
+        return score
     # END PROBLEM 4
 
 def sus_update(num_rolls, player_score, opponent_score, dice=six_sided):
@@ -91,6 +130,8 @@ def sus_update(num_rolls, player_score, opponent_score, dice=six_sided):
     """
     # BEGIN PROBLEM 4
     "*** YOUR CODE HERE ***"
+    total_score = take_turn(num_rolls, player_score, opponent_score, dice) + player_score
+    return sus_points(total_score)
     # END PROBLEM 4
 
 
@@ -130,8 +171,18 @@ def play(strategy0, strategy1, update,
     who = 0  # Who is about to take a turn, 0 (first) or 1 (second)
     # BEGIN PROBLEM 5
     "*** YOUR CODE HERE ***"
-    # END PROBLEM 5
+    while score0 < goal and score1 < goal:
+        if who == 0:
+            numroll1 = strategy0(score0,score1)
+            score0 = update(numroll1,score0,score1)
+        else:
+            numroll2 = strategy1(score1,score0)
+            score1 = update(numroll2,score1,score0)
+        who = 1 - who
     return score0, score1
+    # END PROBLEM 5
+    
+   
 
 
 #######################
